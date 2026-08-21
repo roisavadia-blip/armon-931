@@ -93,11 +93,37 @@
     <div class="card p-3 rounded-xl mb-4 space-y-2">
       <span class="text-xs font-bold text-gray-300 block mb-1">הוספת אמצעי חדש לצוות:</span>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <input type="text" id="item-type" placeholder="סוג אמצעי (למשל: ציין, אמצעי ראייה)" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
-        <input type="text" id="item-id" placeholder="זיהוי ייחודי (צ')" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+        <input type="text" id="item-type" oninput="checkWeaponType()" placeholder="סוג אמצעי (נגב, M4, ציין...)" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+        <input type="text" id="item-id" placeholder="זיהוי ייחודי / צ' נשק" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
         <input type="number" id="item-qty" placeholder="כמות" value="1" min="1" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
         <input type="text" id="item-owner" placeholder="למי שייך (שם חייל)" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
       </div>
+
+      <!-- שדות נשק מורחבים (כוונת + פ"ק - נפתחים רק עבור נגב / M4) -->
+      <div id="weapon-fields" class="hidden space-y-2 pt-2 border-t border-gray-700">
+        <!-- כוונת -->
+        <div class="grid grid-cols-2 gap-2">
+          <select id="sight-type" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+            <option value="">בחר סוג כוונת...</option>
+            <option value="EOTECH">EOTECH</option>
+            <option value="Trijicon">Trijicon</option>
+            <option value="M5">M5</option>
+            <option value="אחר">אחר</option>
+          </select>
+          <input type="text" id="sight-id" placeholder="צ' כוונת" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+        </div>
+
+        <!-- פ"ק -->
+        <div class="grid grid-cols-2 gap-2">
+          <select id="peq-type" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+            <option value="">בחר סוג פ"ק...</option>
+            <option value="EOTECH OGL">EOTECH OGL</option>
+            <option value="אחר">אחר</option>
+          </select>
+          <input type="text" id="peq-id" placeholder="צ' פ''ק" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+        </div>
+      </div>
+
       <button onclick="addItem()" class="w-full bg-green-600 hover:bg-green-500 py-2 rounded-lg text-xs font-bold mt-2">+ הוסף אמצעי</button>
     </div>
 
@@ -139,6 +165,16 @@
       if (newUrl) db.ref('settings/armon_bg').set(newUrl.trim());
     }
 
+    function checkWeaponType() {
+      const typeVal = document.getElementById('item-type').value.trim().toLowerCase();
+      const weaponFields = document.getElementById('weapon-fields');
+      if (typeVal.includes('נגב') || typeVal.includes('m4') || typeVal.includes('אמ4') || typeVal.includes('אמ 4')) {
+        weaponFields.classList.remove('hidden');
+      } else {
+        weaponFields.classList.add('hidden');
+      }
+    }
+
     function switchTab(tabName) {
       document.getElementById('tab-dashboard').classList.add('hidden');
       document.getElementById('tab-teams').classList.add('hidden');
@@ -177,6 +213,10 @@
       const uniqueId = document.getElementById('item-id').value.trim();
       const qty = parseInt(document.getElementById('item-qty').value) || 1;
       const owner = document.getElementById('item-owner').value.trim();
+      const sightType = document.getElementById('sight-type').value;
+      const sightId = document.getElementById('sight-id').value.trim();
+      const peqType = document.getElementById('peq-type').value;
+      const peqId = document.getElementById('peq-id').value.trim();
 
       if (!type || !currentTeamId) {
         alert("חובה להזין סוג אמצעי");
@@ -189,6 +229,10 @@
         uniqueId: uniqueId,
         quantity: qty,
         owner: owner,
+        sightType: sightType || '',
+        sightId: sightId || '',
+        peqType: peqType || '',
+        peqId: peqId || '',
         isStored: false
       });
 
@@ -196,6 +240,11 @@
       document.getElementById('item-id').value = '';
       document.getElementById('item-qty').value = '1';
       document.getElementById('item-owner').value = '';
+      document.getElementById('sight-type').value = '';
+      document.getElementById('sight-id').value = '';
+      document.getElementById('peq-type').value = '';
+      document.getElementById('peq-id').value = '';
+      document.getElementById('weapon-fields').classList.add('hidden');
     }
 
     function updateItemStatus(itemId, isStored) {
@@ -252,9 +301,11 @@
         list.innerHTML += `
           <div class="card p-3 rounded-xl flex justify-between items-center text-xs">
             <div class="space-y-1">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
                 <span class="font-bold text-sm text-blue-300">${item.type}</span>
                 ${item.uniqueId ? `<span class="bg-gray-800 px-2 py-0.5 rounded text-gray-300 border border-gray-700">צ': ${item.uniqueId}</span>` : ''}
+                ${item.sightType ? `<span class="bg-amber-900/50 text-amber-300 px-2 py-0.5 rounded border border-amber-700 font-bold">כוונת: ${item.sightType} ${item.sightId ? `(צ' ${item.sightId})` : ''}</span>` : ''}
+                ${item.peqType ? `<span class="bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded border border-purple-700 font-bold">פ''ק: ${item.peqType} ${item.peqId ? `(צ' ${item.peqId})` : ''}</span>` : ''}
               </div>
               <p class="text-gray-400">כמות: <b class="text-white">${item.quantity || 1}</b> | שייך ל: <b class="text-white">${item.owner || 'לא שויך'}</b></p>
             </div>

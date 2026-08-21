@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="he" dir="rtl">
-<head>
+<!DOCTYPE html><html lang="he" dir="rtl"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ארמון מבצעית 931 - ניהול אמצעים</title>
@@ -19,9 +17,7 @@
       transition: background-image 0.3s ease-in-out;
     }
     .card { background-color: rgba(28, 37, 65, 0.85); border: 1px solid #2a385b; backdrop-filter: blur(8px); }
-  </style>
-</head>
-<body id="main-body" class="p-4 max-w-5xl mx-auto pb-12">
+  </style></head><body id="main-body" class="p-4 max-w-5xl mx-auto pb-12">
 
   <!-- כותרת ראשית -->
   <header class="text-center mb-6 border-b border-gray-700 pb-4">
@@ -99,11 +95,11 @@
         <input type="text" id="item-owner" placeholder="למי שייך (שם חייל)" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
       </div>
 
-      <!-- שדות נשק מורחבים (כוונת + פ"ק - נפתחים רק עבור נגב / M4) -->
+      <!-- שדות נשק מורחבים (כוונת + פ"ק + אמר"ל) -->
       <div id="weapon-fields" class="hidden space-y-2 pt-2 border-t border-gray-700">
         <!-- כוונת -->
         <div class="grid grid-cols-2 gap-2">
-          <select id="sight-type" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+          <select id="sight-type" onchange="toggleCustomInputs()" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
             <option value="">בחר סוג כוונת...</option>
             <option value="EOTECH">EOTECH</option>
             <option value="Trijicon">Trijicon</option>
@@ -112,16 +108,33 @@
           </select>
           <input type="text" id="sight-id" placeholder="צ' כוונת" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
         </div>
+        <input type="text" id="sight-custom" placeholder="פרט סוג כוונת אחר..." class="hidden w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+
+        <!-- אמר"ל (נפתח רק בבחירת Trijicon) -->
+        <div id="nvg-fields" class="hidden space-y-2 p-2 bg-gray-900/40 rounded-lg border border-gray-700/60">
+          <span class="text-xs text-emerald-400 font-bold block">אמר"ל (נפתח עבור Trijicon):</span>
+          <div class="grid grid-cols-2 gap-2">
+            <select id="nvg-type" onchange="toggleCustomInputs()" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+              <option value="">בחר סוג אמר"ל...</option>
+              <option value="מכבית">מכבית</option>
+              <option value="ליאור">ליאור</option>
+              <option value="אחר">אחר</option>
+            </select>
+            <input type="text" id="nvg-id" placeholder="צ' אמר''ל" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+          </div>
+          <input type="text" id="nvg-custom" placeholder="פרט סוג אמר''ל אחר..." class="hidden w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+        </div>
 
         <!-- פ"ק -->
         <div class="grid grid-cols-2 gap-2">
-          <select id="peq-type" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+          <select id="peq-type" onchange="toggleCustomInputs()" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
             <option value="">בחר סוג פ"ק...</option>
             <option value="EOTECH OGL">EOTECH OGL</option>
             <option value="אחר">אחר</option>
           </select>
           <input type="text" id="peq-id" placeholder="צ' פ''ק" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
         </div>
+        <input type="text" id="peq-custom" placeholder="פרט סוג פ''ק אחר..." class="hidden w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
       </div>
 
       <button onclick="addItem()" class="w-full bg-green-600 hover:bg-green-500 py-2 rounded-lg text-xs font-bold mt-2">+ הוסף אמצעי</button>
@@ -175,6 +188,24 @@
       }
     }
 
+    function toggleCustomInputs() {
+      const sightSelect = document.getElementById('sight-type').value;
+      const peqSelect = document.getElementById('peq-type').value;
+      const nvgSelect = document.getElementById('nvg-type').value;
+
+      document.getElementById('sight-custom').classList.toggle('hidden', sightSelect !== 'אחר');
+      document.getElementById('peq-custom').classList.toggle('hidden', peqSelect !== 'אחר');
+      document.getElementById('nvg-custom').classList.toggle('hidden', nvgSelect !== 'אחר');
+
+      // פתיחת שדות אמר"ל במידה שנבחר Trijicon
+      const nvgFields = document.getElementById('nvg-fields');
+      if (sightSelect === 'Trijicon') {
+        nvgFields.classList.remove('hidden');
+      } else {
+        nvgFields.classList.add('hidden');
+      }
+    }
+
     function switchTab(tabName) {
       document.getElementById('tab-dashboard').classList.add('hidden');
       document.getElementById('tab-teams').classList.add('hidden');
@@ -213,9 +244,23 @@
       const uniqueId = document.getElementById('item-id').value.trim();
       const qty = parseInt(document.getElementById('item-qty').value) || 1;
       const owner = document.getElementById('item-owner').value.trim();
-      const sightType = document.getElementById('sight-type').value;
+      
+      let sightType = document.getElementById('sight-type').value;
+      if (sightType === 'אחר') {
+        sightType = document.getElementById('sight-custom').value.trim() || 'כוונת אחרת';
+      }
       const sightId = document.getElementById('sight-id').value.trim();
-      const peqType = document.getElementById('peq-type').value;
+
+      let nvgType = document.getElementById('nvg-type').value;
+      if (nvgType === 'אחר') {
+        nvgType = document.getElementById('nvg-custom').value.trim() || 'אמר"ל אחר';
+      }
+      const nvgId = document.getElementById('nvg-id').value.trim();
+
+      let peqType = document.getElementById('peq-type').value;
+      if (peqType === 'אחר') {
+        peqType = document.getElementById('peq-custom').value.trim() || 'פ"ק אחר';
+      }
       const peqId = document.getElementById('peq-id').value.trim();
 
       if (!type || !currentTeamId) {
@@ -231,6 +276,8 @@
         owner: owner,
         sightType: sightType || '',
         sightId: sightId || '',
+        nvgType: (sightType === 'Trijicon' || sightType.includes('Trijicon')) ? (nvgType || '') : '',
+        nvgId: (sightType === 'Trijicon' || sightType.includes('Trijicon')) ? (nvgId || '') : '',
         peqType: peqType || '',
         peqId: peqId || '',
         isStored: false
@@ -242,9 +289,15 @@
       document.getElementById('item-owner').value = '';
       document.getElementById('sight-type').value = '';
       document.getElementById('sight-id').value = '';
+      document.getElementById('sight-custom').value = '';
+      document.getElementById('nvg-type').value = '';
+      document.getElementById('nvg-id').value = '';
+      document.getElementById('nvg-custom').value = '';
       document.getElementById('peq-type').value = '';
       document.getElementById('peq-id').value = '';
+      document.getElementById('peq-custom').value = '';
       document.getElementById('weapon-fields').classList.add('hidden');
+      toggleCustomInputs();
     }
 
     function updateItemStatus(itemId, isStored) {
@@ -264,7 +317,14 @@
         const team = data[teamId];
         const items = team.items ? Object.values(team.items) : [];
         let storedCount = 0;
-        items.forEach(i => { if (i.isStored) storedCount += (i.quantity || 1); });
+        items.forEach(i => { 
+          if (i.isStored) {
+            storedCount += (i.quantity || 1);
+            if (i.sightType) storedCount += 1;
+            if (i.peqType) storedCount += 1;
+            if (i.nvgType) storedCount += 1;
+          }
+        });
 
         list.innerHTML += `
           <div class="card p-4 rounded-xl flex justify-between items-center">
@@ -305,6 +365,7 @@
                 <span class="font-bold text-sm text-blue-300">${item.type}</span>
                 ${item.uniqueId ? `<span class="bg-gray-800 px-2 py-0.5 rounded text-gray-300 border border-gray-700">צ': ${item.uniqueId}</span>` : ''}
                 ${item.sightType ? `<span class="bg-amber-900/50 text-amber-300 px-2 py-0.5 rounded border border-amber-700 font-bold">כוונת: ${item.sightType} ${item.sightId ? `(צ' ${item.sightId})` : ''}</span>` : ''}
+                ${item.nvgType ? `<span class="bg-emerald-900/50 text-emerald-300 px-2 py-0.5 rounded border border-emerald-700 font-bold">אמר"ל: ${item.nvgType} ${item.nvgId ? `(צ' ${item.nvgId})` : ''}</span>` : ''}
                 ${item.peqType ? `<span class="bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded border border-purple-700 font-bold">פ''ק: ${item.peqType} ${item.peqId ? `(צ' ${item.peqId})` : ''}</span>` : ''}
               </div>
               <p class="text-gray-400">כמות: <b class="text-white">${item.quantity || 1}</b> | שייך ל: <b class="text-white">${item.owner || 'לא שויך'}</b></p>
@@ -327,22 +388,38 @@
       let typeMap = {}; 
       let teamNames = [];
 
+      // פונקציית עזר להוספת נתונים למפה המתכללת
+      const addToMap = (type, teamName, isStored, qty = 1) => {
+        if (!typeMap[type]) typeMap[type] = { totalStored: 0, teams: {} };
+
+        if (isStored) {
+          totalStored += qty;
+          typeMap[type].totalStored += qty;
+          typeMap[type].teams[teamName] = (typeMap[type].teams[teamName] || 0) + qty;
+        } else {
+          totalOutside += qty;
+        }
+      };
+
       Object.values(data).forEach(team => {
         if (!teamNames.includes(team.name)) teamNames.push(team.name);
         if (!team.items) return;
 
         Object.values(team.items).forEach(item => {
           const qty = item.quantity || 1;
-          const type = item.type;
+          
+          // הוספת הנשק הראשי
+          addToMap(item.type, team.name, item.isStored, qty);
 
-          if (!typeMap[type]) typeMap[type] = { totalStored: 0, teams: {} };
-
-          if (item.isStored) {
-            totalStored += qty;
-            typeMap[type].totalStored += qty;
-            typeMap[type].teams[team.name] = (typeMap[type].teams[team.name] || 0) + qty;
-          } else {
-            totalOutside += qty;
+          // הוספת הכוונת, הפ"ק והאמר"ל כפריטים נפרדים בטבלה המתכללת במידה וקיימים
+          if (item.sightType) {
+            addToMap(`כוונת ${item.sightType}`, team.name, item.isStored, 1);
+          }
+          if (item.peqType) {
+            addToMap(`פ"ק ${item.peqType}`, team.name, item.isStored, 1);
+          }
+          if (item.nvgType) {
+            addToMap(`אמר"ל ${item.nvgType}`, team.name, item.isStored, 1);
           }
         });
       });
@@ -370,6 +447,4 @@
         tbody.innerHTML += rowHTML;
       });
     }
-  </script>
-</body>
-</html>
+  </script></body></html>

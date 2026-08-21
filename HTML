@@ -3,61 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ניהול מלאי רימונים</title>
-  <!-- Tailwind CSS לקבלת עיצוב מודרני ומהיר -->
+  <title>ארמון מבצעית 931 - ניהול אמצעים</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   <style>
-    body { background-color: #0b132b; color: #ffffff; font-family: system-ui, -apple-system, sans-serif; }
-    .card { background-color: #1c2541; border: 1px solid #2a385b; }
-    .btn-primary { background-color: #3a506b; hover:background-color: #486581; }
+    body { 
+      background-color: #0b132b; 
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: #ffffff; 
+      font-family: system-ui, -apple-system, sans-serif;
+      transition: background-image 0.3s ease-in-out;
+    }
+    .card { background-color: rgba(28, 37, 65, 0.85); border: 1px solid #2a385b; backdrop-filter: blur(8px); }
   </style>
 </head>
-<body class="p-4 max-w-3xl mx-auto pb-12">
+<body id="main-body" class="p-4 max-w-5xl mx-auto pb-12">
 
   <!-- כותרת ראשית -->
   <header class="text-center mb-6 border-b border-gray-700 pb-4">
-    <h1 class="text-2xl font-bold text-blue-400">ניהול מלאי רימונים</h1>
-    <p class="text-xs text-gray-400 mt-1">מסונכרן בזמן אמת (Firebase) - כל מכשיר רואה ומעדכן</p>
+    <h1 class="text-3xl font-extrabold text-blue-400">ארמון מבצעית 931</h1>
+    <p class="text-xs text-green-400 mt-1">● מחובר לענן (Firebase) - סנכרון בזמן אמת</p>
     
-    <!-- ניווט בין מסכים -->
+    <div id="admin-bg-panel" class="hidden mt-3">
+      <button onclick="updateBackgroundUrl()" class="bg-amber-600 hover:bg-amber-500 text-xs font-bold text-white px-3 py-1.5 rounded-lg border border-amber-400">
+        ⚙️ שינוי קישור תמונת רקע (מנהל)
+      </button>
+    </div>
+
     <div class="flex justify-center gap-4 mt-4">
-      <button onclick="switchTab('dashboard')" class="bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm">דו"ח מרוכז</button>
-      <button onclick="switchTab('teams')" class="bg-gray-700 px-4 py-2 rounded-lg font-bold text-sm">צוותים</button>
+      <button id="btn-dashboard" onclick="switchTab('dashboard')" class="bg-blue-600 px-5 py-2 rounded-lg font-bold text-sm">דו"ח מרוכז</button>
+      <button id="btn-teams" onclick="switchTab('teams')" class="bg-gray-700 px-5 py-2 rounded-lg font-bold text-sm">ניהול צוותים</button>
     </div>
   </header>
 
   <!-- מסך 1: דו"ח מרוכז -->
   <div id="tab-dashboard">
-    <div class="grid grid-cols-2 gap-4 mb-6">
-      <div class="card p-4 rounded-xl text-center">
-        <span class="text-gray-400 text-xs block mb-1">סך רימונים מאופסים</span>
-        <span id="stat-zeroed" class="text-3xl font-extrabold text-green-400">0</span>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+      <div class="card p-3 rounded-xl text-center">
+        <span class="text-gray-400 text-xs block mb-1">סוגי אמצעים במערכת</span>
+        <span id="stat-types-count" class="text-2xl font-extrabold text-blue-300">0</span>
       </div>
-      <div class="card p-4 rounded-xl text-center">
-        <span class="text-gray-400 text-xs block mb-1">סך רימונים רשומים</span>
-        <span id="stat-total" class="text-3xl font-extrabold text-blue-400">0</span>
+      <div class="card p-3 rounded-xl text-center">
+        <span class="text-gray-400 text-xs block mb-1">סה"כ פריטים מאופסנים</span>
+        <span id="stat-total-stored" class="text-2xl font-extrabold text-green-400">0</span>
+      </div>
+      <div class="card p-3 rounded-xl text-center col-span-2 md:col-span-1">
+        <span class="text-gray-400 text-xs block mb-1">סה"כ פריטים בחוץ</span>
+        <span id="stat-total-outside" class="text-2xl font-extrabold text-amber-400">0</span>
       </div>
     </div>
 
     <div class="card p-4 rounded-xl">
-      <h2 class="text-sm font-bold mb-3 border-b border-gray-700 pb-2">כמות מאופסת לכל מספר סדרה לפי צוותים</h2>
+      <h2 class="text-sm font-bold mb-3 text-center border-b border-gray-700 pb-2">טבלה מתכללת: אמצעים מאופסנים לפי צוותים</h2>
       <div class="overflow-x-auto">
-        <table class="w-full text-right text-xs">
+        <table class="w-full text-center text-xs">
           <thead>
-            <tr class="border-b border-gray-600 text-gray-400">
-              <th class="p-2">מספר סדרה</th>
-              <th class="p-2">חפ"ק</th>
-              <th class="p-2">חוד</th>
-              <th class="p-2">פיקודית</th>
-              <th class="p-2">רותק</th>
+            <tr id="matrix-header" class="border-b border-gray-600 text-gray-400">
+              <th class="p-2 text-right">סוג אמצעי</th>
             </tr>
           </thead>
-          <tbody id="matrix-body">
-            <!-- נתונים יוזרמו לכאן אוטומטית -->
-          </tbody>
+          <tbody id="matrix-body"></tbody>
         </table>
       </div>
     </div>
@@ -65,211 +74,249 @@
 
   <!-- מסך 2: רשימת צוותים -->
   <div id="tab-teams" class="hidden">
-    <div class="flex gap-2 mb-4">
-      <input type="text" id="new-team-name" placeholder="שם צוות חדש..." class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm flex-1">
-      <button onclick="addTeam()" class="bg-blue-600 px-4 py-2 rounded-lg text-sm font-bold">+</button>
+    <div class="card p-3 rounded-xl mb-4 flex gap-2">
+      <input type="text" id="new-team-name" placeholder="שם צוות חדש (למשל: רתק, חוד, חפ''ק)..." class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm flex-1 text-white">
+      <button onclick="addTeam()" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-sm font-bold">הוסף צוות</button>
     </div>
 
-    <div id="teams-list" class="space-y-3">
-      <!-- רשימת הצוותים תוצג כאן -->
-    </div>
+    <div id="teams-list" class="space-y-3"></div>
   </div>
 
   <!-- מסך 3: ניהול צוות ספציפי -->
   <div id="tab-single-team" class="hidden">
     <button onclick="switchTab('teams')" class="text-xs text-blue-400 mb-3 block">← חזרה לכל הצוותים</button>
-    <h2 id="current-team-title" class="text-xl font-bold mb-4 border-b border-gray-700 pb-2"></h2>
+    <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+      <h2 id="current-team-title" class="text-xl font-bold"></h2>
+    </div>
 
-    <div class="card p-4 rounded-xl mb-4">
-      <h3 class="text-sm font-bold mb-2">הוספת חייל</h3>
-      <div class="flex gap-2">
-        <input type="text" id="new-soldier-name" placeholder="שם החייל" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm flex-1">
-        <button onclick="addSoldier()" class="bg-green-600 px-4 py-2 rounded-lg text-sm font-bold">הוסף</button>
+    <!-- טופס הוספת אמצעי -->
+    <div class="card p-3 rounded-xl mb-4 space-y-2">
+      <span class="text-xs font-bold text-gray-300 block mb-1">הוספת אמצעי חדש לצוות:</span>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <input type="text" id="item-type" placeholder="סוג אמצעי (למשל: ציין, אמצעי ראייה)" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+        <input type="text" id="item-id" placeholder="זיהוי ייחודי (צ')" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+        <input type="number" id="item-qty" placeholder="כמות" value="1" min="1" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
+        <input type="text" id="item-owner" placeholder="למי שייך (שם חייל)" class="bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white">
       </div>
+      <button onclick="addItem()" class="w-full bg-green-600 hover:bg-green-500 py-2 rounded-lg text-xs font-bold mt-2">+ הוסף אמצעי</button>
     </div>
 
-    <div id="soldiers-list" class="space-y-4">
-      <!-- חיילים ורימונים יוזנו כאן -->
-    </div>
+    <div id="items-list" class="space-y-3"></div>
   </div>
 
   <script>
-    // הגדרות Firebase - יש להחליף את ה-Config הזה בפרטים מהפרויקט שלך ב-Firebase
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyA2Fa08VxXozP-fAYOBJhkzWA-qOL6VYBU",
+      authDomain: "grande-815a1.firebaseapp.com",
+      databaseURL: "https://grande-815a1-default-rtdb.firebaseio.com",
+      projectId: "grande-815a1",
+      storageBucket: "grande-815a1.firebasestorage.app",
+      messagingSenderId: "921189338159",
+      appId: "1:921189338159:web:1fa991d9e776bc7d228ada",
+      measurementId: "G-NSMKKY2EER"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
     let currentTeamId = null;
 
-    // ניווט בלשוניות
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('admin') === 'true') {
+        document.getElementById('admin-bg-panel').classList.remove('hidden');
+      }
+    });
+
+    db.ref('settings/armon_bg').on('value', (snapshot) => {
+      const bgUrl = snapshot.val();
+      if (bgUrl) {
+        document.body.style.backgroundImage = `linear-gradient(rgba(11, 19, 43, 0.85), rgba(11, 19, 43, 0.85)), url('${bgUrl}')`;
+      }
+    });
+
+    function updateBackgroundUrl() {
+      const newUrl = prompt("הכנס קישור לתמונת הרקע:");
+      if (newUrl) db.ref('settings/armon_bg').set(newUrl.trim());
+    }
+
     function switchTab(tabName) {
       document.getElementById('tab-dashboard').classList.add('hidden');
       document.getElementById('tab-teams').classList.add('hidden');
       document.getElementById('tab-single-team').classList.add('hidden');
-
+      
       document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+      document.getElementById('btn-dashboard').className = tabName === 'dashboard' ? 'bg-blue-600 px-5 py-2 rounded-lg font-bold text-sm' : 'bg-gray-700 px-5 py-2 rounded-lg font-bold text-sm';
+      document.getElementById('btn-teams').className = tabName !== 'dashboard' ? 'bg-blue-600 px-5 py-2 rounded-lg font-bold text-sm' : 'bg-gray-700 px-5 py-2 rounded-lg font-bold text-sm';
     }
 
-    // סנכרון נתונים בזמן אמת מול Firebase
-    db.ref('inventory').on('value', (snapshot) => {
+    db.ref('armon_inventory').on('value', (snapshot) => {
       const data = snapshot.val() || {};
       renderDashboard(data);
       renderTeams(data);
       if (currentTeamId) renderSingleTeam(data, currentTeamId);
     });
 
-    // הוספת צוות
     function addTeam() {
-      const name = document.getElementById('new-team-name').value.trim();
+      const input = document.getElementById('new-team-name');
+      const name = input.value.trim();
       if (!name) return;
-      const teamId = db.ref('inventory').push().key;
-      db.ref(`inventory/${teamId}`).set({ name: name, soldiers: {} });
-      document.getElementById('new-team-name').value = '';
+      const teamId = db.ref('armon_inventory').push().key;
+      db.ref(`armon_inventory/${teamId}`).set({ name: name, items: {} });
+      input.value = '';
     }
 
-    // הוספת חייל
-    function addSoldier() {
-      const name = document.getElementById('new-soldier-name').value.trim();
-      if (!name || !currentTeamId) return;
-      const soldierId = db.ref(`inventory/${currentTeamId}/soldiers`).push().key;
-      db.ref(`inventory/${currentTeamId}/soldiers/${soldierId}`).set({
-        name: name,
-        grenades: [{ id: 1, serial: '', number: '', isZeroed: false }]
+    function deleteTeam(teamId, teamName) {
+      if (confirm(`האם למחוק את צוות "${teamName}" ואת כל האמצעים שלו?`)) {
+        db.ref(`armon_inventory/${teamId}`).remove();
+      }
+    }
+
+    function addItem() {
+      const type = document.getElementById('item-type').value.trim();
+      const uniqueId = document.getElementById('item-id').value.trim();
+      const qty = parseInt(document.getElementById('item-qty').value) || 1;
+      const owner = document.getElementById('item-owner').value.trim();
+
+      if (!type || !currentTeamId) {
+        alert("חובה להזין סוג אמצעי");
+        return;
+      }
+
+      const itemId = db.ref(`armon_inventory/${currentTeamId}/items`).push().key;
+      db.ref(`armon_inventory/${currentTeamId}/items/${itemId}`).set({
+        type: type,
+        uniqueId: uniqueId,
+        quantity: qty,
+        owner: owner,
+        isStored: false
       });
-      document.getElementById('new-soldier-name').value = '';
+
+      document.getElementById('item-type').value = '';
+      document.getElementById('item-id').value = '';
+      document.getElementById('item-qty').value = '1';
+      document.getElementById('item-owner').value = '';
     }
 
-    // הוספת רימון לחייל
-    function addGrenade(soldierId, currentGrenades = []) {
-      const updated = [...currentGrenades, { id: Date.now(), serial: '', number: '', isZeroed: false }];
-      db.ref(`inventory/${currentTeamId}/soldiers/${soldierId}/grenades`).set(updated);
+    function updateItemStatus(itemId, isStored) {
+      db.ref(`armon_inventory/${currentTeamId}/items/${itemId}/isStored`).set(isStored);
     }
 
-    // עדכון פרטי רימון
-    function updateGrenade(soldierId, gIndex, field, value) {
-      db.ref(`inventory/${currentTeamId}/soldiers/${soldierId}/grenades/${gIndex}/${field}`).set(value);
+    function deleteItem(itemId) {
+      if (confirm("האם למחוק אמצעי זה?")) {
+        db.ref(`armon_inventory/${currentTeamId}/items/${itemId}`).remove();
+      }
     }
 
-    // הצגת רשימת צוותים
     function renderTeams(data) {
       const list = document.getElementById('teams-list');
       list.innerHTML = '';
       Object.keys(data).forEach(teamId => {
         const team = data[teamId];
-        const soldiers = team.soldiers ? Object.values(team.soldiers) : [];
-        let totalZeroed = 0;
-        soldiers.forEach(s => {
-          (s.grenades || []).forEach(g => { if (g.isZeroed) totalZeroed++; });
-        });
+        const items = team.items ? Object.values(team.items) : [];
+        let storedCount = 0;
+        items.forEach(i => { if (i.isStored) storedCount += (i.quantity || 1); });
 
         list.innerHTML += `
           <div class="card p-4 rounded-xl flex justify-between items-center">
             <div>
               <h3 class="font-bold text-lg">${team.name}</h3>
-              <p class="text-xs text-gray-400">${soldiers.length} חיילים · ${totalZeroed} רימונים מאופסים</p>
+              <p class="text-xs text-gray-400">${items.length} סוגי אמצעים רשומים · ${storedCount} פריטים מאופסנים</p>
             </div>
-            <button onclick="openTeam('${teamId}')" class="bg-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold">כניסה לצוות</button>
+            <div class="flex gap-2">
+              <button onclick="openTeam('${teamId}')" class="bg-blue-600 hover:bg-blue-500 px-3 py-2 rounded-lg text-xs font-bold">ניהול אמצעים</button>
+              <button onclick="deleteTeam('${teamId}', '${team.name}')" class="bg-red-900/60 hover:bg-red-800 text-red-300 border border-red-700 px-3 py-2 rounded-lg text-xs font-bold">מחק צוות</button>
+            </div>
           </div>
         `;
       });
     }
 
-    // פתיחת צוות ספציפי
     function openTeam(teamId) {
       currentTeamId = teamId;
       switchTab('single-team');
-      db.ref('inventory').once('value', snapshot => {
-        renderSingleTeam(snapshot.val(), teamId);
-      });
+      db.ref('armon_inventory').once('value', snapshot => renderSingleTeam(snapshot.val() || {}, teamId));
     }
 
-    // הצגת חיילי צוות
     function renderSingleTeam(data, teamId) {
       const team = data[teamId];
       if (!team) return;
-      document.getElementById('current-team-title').innerText = team.name;
+      document.getElementById('current-team-title').innerText = `אמצעים - צוות ${team.name}`;
 
-      const list = document.getElementById('soldiers-list');
+      const list = document.getElementById('items-list');
       list.innerHTML = '';
 
-      const soldiers = team.soldiers || {};
-      Object.keys(soldiers).forEach(sId => {
-        const soldier = soldiers[sId];
-        const grenades = soldier.grenades || [];
-
-        let grenadesHTML = grenades.map((g, idx) => `
-          <div class="bg-gray-800 p-2 rounded-lg mt-2 border border-gray-700 text-xs space-y-2">
-            <div class="flex gap-2">
-              <input type="text" placeholder="סדרה (למשל 4-21)" value="${g.serial || ''}" 
-                onchange="updateGrenade('${sId}', ${idx}, 'serial', this.value)" class="bg-gray-900 p-1.5 rounded border border-gray-700 w-1/2">
-              <input type="text" placeholder="מס' רימון" value="${g.number || ''}" 
-                onchange="updateGrenade('${sId}', ${idx}, 'number', this.value)" class="bg-gray-900 p-1.5 rounded border border-gray-700 w-1/2">
-            </div>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" ${g.isZeroed ? 'checked' : ''} 
-                onchange="updateGrenade('${sId}', ${idx}, 'isZeroed', this.checked)" class="w-4 h-4 text-blue-600 rounded">
-              <span>מאופס</span>
-            </label>
-          </div>
-        `).join('');
-
+      const items = team.items || {};
+      Object.keys(items).forEach(iId => {
+        const item = items[iId];
         list.innerHTML += `
-          <div class="card p-3 rounded-xl">
-            <h4 class="font-bold text-sm mb-1">${soldier.name}</h4>
-            ${grenadesHTML}
-            <button onclick='addGrenade("${sId}", ${JSON.stringify(grenades)})' class="w-full mt-2 bg-gray-700 hover:bg-gray-600 text-xs py-1.5 rounded-lg">+ הוסף רימון</button>
+          <div class="card p-3 rounded-xl flex justify-between items-center text-xs">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-blue-300">${item.type}</span>
+                ${item.uniqueId ? `<span class="bg-gray-800 px-2 py-0.5 rounded text-gray-300 border border-gray-700">צ': ${item.uniqueId}</span>` : ''}
+              </div>
+              <p class="text-gray-400">כמות: <b class="text-white">${item.quantity || 1}</b> | שייך ל: <b class="text-white">${item.owner || 'לא שויך'}</b></p>
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="flex items-center gap-1.5 cursor-pointer bg-gray-800 px-2.5 py-1.5 rounded-lg border border-gray-700">
+                <input type="checkbox" ${item.isStored ? 'checked' : ''} onchange="updateItemStatus('${iId}', this.checked)" class="w-4 h-4 text-blue-600 rounded">
+                <span class="${item.isStored ? 'text-green-400 font-bold' : 'text-gray-400'}">מאופסן</span>
+              </label>
+              <button onclick="deleteItem('${iId}')" class="text-red-400 hover:text-red-300">מחק</button>
+            </div>
           </div>
         `;
       });
     }
 
-    // חישוב ועדכון ה-Dashboard
     function renderDashboard(data) {
-      let total = 0;
-      let zeroed = 0;
-      let seriesMap = {}; // { "4-21": { "צוות א": 2 } }
+      let totalStored = 0;
+      let totalOutside = 0;
+      let typeMap = {}; 
+      let teamNames = [];
 
       Object.values(data).forEach(team => {
-        if (!team.soldiers) return;
-        Object.values(team.soldiers).forEach(s => {
-          (s.grenades || []).forEach(g => {
-            if (g.serial) {
-              total++;
-              if (g.isZeroed) {
-                zeroed++;
-                if (!seriesMap[g.serial]) seriesMap[g.serial] = {};
-                seriesMap[g.serial][team.name] = (seriesMap[g.serial][team.name] || 0) + 1;
-              }
-            }
-          });
+        if (!teamNames.includes(team.name)) teamNames.push(team.name);
+        if (!team.items) return;
+
+        Object.values(team.items).forEach(item => {
+          const qty = item.quantity || 1;
+          const type = item.type;
+
+          if (!typeMap[type]) typeMap[type] = { totalStored: 0, teams: {} };
+
+          if (item.isStored) {
+            totalStored += qty;
+            typeMap[type].totalStored += qty;
+            typeMap[type].teams[team.name] = (typeMap[type].teams[team.name] || 0) + qty;
+          } else {
+            totalOutside += qty;
+          }
         });
       });
 
-      document.getElementById('stat-total').innerText = total;
-      document.getElementById('stat-zeroed').innerText = zeroed;
+      document.getElementById('stat-types-count').innerText = Object.keys(typeMap).length;
+      document.getElementById('stat-total-stored').innerText = totalStored;
+      document.getElementById('stat-total-outside').innerText = totalOutside;
 
-      // טבלה
+      const header = document.getElementById('matrix-header');
+      header.innerHTML = '<th class="p-2 text-right">סוג אמצעי</th>';
+      teamNames.forEach(name => {
+        header.innerHTML += `<th class="p-2">${name}</th>`;
+      });
+      header.innerHTML += '<th class="p-2 text-green-400">סה"כ באפסון</th>';
+
       const tbody = document.getElementById('matrix-body');
       tbody.innerHTML = '';
-      Object.keys(seriesMap).forEach(serial => {
-        tbody.innerHTML += `
-          <tr class="border-b border-gray-700">
-            <td class="p-2 font-bold">${serial}</td>
-            <td class="p-2">${seriesMap[serial]['חפ"ק'] || '-'}</td>
-            <td class="p-2">${seriesMap[serial]['חוד'] || '-'}</td>
-            <td class="p-2">${seriesMap[serial]['פיקודית'] || '-'}</td>
-            <td class="p-2">${seriesMap[serial]['רותק'] || '-'}</td>
-          </tr>
-        `;
+      Object.keys(typeMap).forEach(type => {
+        let rowHTML = `<tr class="border-b border-gray-700"><td class="p-2 font-bold text-right">${type}</td>`;
+        teamNames.forEach(name => {
+          const count = typeMap[type].teams[name] || '-';
+          rowHTML += `<td class="p-2 ${count !== '-' ? 'text-blue-300 font-bold' : 'text-gray-500'}">${count}</td>`;
+        });
+        rowHTML += `<td class="p-2 text-green-400 font-bold">${typeMap[type].totalStored}</td></tr>`;
+        tbody.innerHTML += rowHTML;
       });
     }
   </script>
